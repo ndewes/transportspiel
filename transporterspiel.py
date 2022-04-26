@@ -18,9 +18,9 @@ FPS = 60
 
 #Geschwindigkeiten für die bewegenden Objekte
 G_TRANSPORTER = 5
-G_HELI = 5
+G_HELI = 6
 G_TRANSPORTER_MINUS = -5
-G_HELI_MINUS = -5
+G_HELI_MINUS = -6
 
 #Gebäudeparameter für Tankstelle, Lager und der Mine
 class Gebaeude(pygame.sprite.Sprite):
@@ -121,9 +121,8 @@ class Helikopter(pygame.sprite.Sprite):
             self.rect.top = 0
             self.rect.center = (random.randint(30, 370), 0)
 
+
     def followPoint(self, x, y):
-        # Diese Funktion errechnet die entfernung zu einem Punkt im X/Y Format und bewegt
-        # sich mit einer zufälligen Geschwindigkeit (maximal der Konfigurierten) darauf zu
         xAway = x - self.rect.x
         yAway = y - self.rect.y
         if(xAway > 0 and yAway > 0):
@@ -156,6 +155,9 @@ class Game:
         pygame.font.init()
         pygame.mixer.init()
 
+        self.FramePerSec = pygame.time.Clock()
+        self._running = True
+
         self.map_ = pygame.image.load('grafik/map.png')
         self.map = pygame.transform.scale(self.map_, (1600, 900))
         self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
@@ -172,15 +174,12 @@ class Game:
         self.lose_surf.blit(self.loseScreen, (0, 0))
 
         self.font = pygame.font.Font(None, 20)
-        self.helikopter1 = Helikopter()
+        self.helikopter = Helikopter()
         self.transporter = Transporter(0, 100)
 
-        self.tankstelle = Gebaeude(100, 100, 1375, 250, 'grafik/tankstelle.png')
-        self.mine = Gebaeude(100, 100, 410, 110, 'grafik/mine.png')
         self.lager = Gebaeude(0, 100, 1400, 900, 'grafik/lager.png')
-
-        self.FramePerSec = pygame.time.Clock()
-        self._running = True
+        self.mine = Gebaeude(100, 100, 410, 110, 'grafik/mine.png')
+        self.tankstelle = Gebaeude(100, 100, 1375, 250, 'grafik/tankstelle.png')
 
     def start(self):
         if self.initials() == False:
@@ -198,7 +197,7 @@ class Game:
         self._display_surf.blit(self.erzcounter, (10, 10))
         self.lagercounter = self.font.render('Lager: [Erz: ' + str(self.lager.getLadeStand()) + ']', False, (0, 0, 0))
         self._display_surf.blit(self.lagercounter, (10, 30))
-        self.helicounter = self.font.render('Helikopter: [Geklaut: ' + str(self.helikopter1.getLadestand()) + ']', False, (0, 0, 0))
+        self.helicounter = self.font.render('Helikopter: [Geklaut: ' + str(self.helikopter.getLadestand()) + ']', False, (0, 0, 0))
         self._display_surf.blit(self.helicounter, (10, 50))
  
     def event(self, event):
@@ -207,7 +206,7 @@ class Game:
 
     def game_loop(self):
         self._display_surf.blit(self.map, (0, 0))
-        if self.helikopter1.rect.colliderect(self.transporter.rect):
+        if self.helikopter.rect.colliderect(self.transporter.rect):
             self.heli_collision()
         if self.transporter.rect.colliderect(self.tankstelle.rect):
             self.tanken()
@@ -215,21 +214,25 @@ class Game:
             self.aufladen()
         if self.transporter.rect.colliderect(self.lager.rect):
             self.abladen()
+        if  self.helikopter.rect.colliderect(self.mine.rect):
+            self.helikopter.move()
+        
 
-        if not self.gameOver:
-            self.transporter.update()
-            self.helikopter1.followPoint(self.transporter.rect.x, self.transporter.rect.y)
-            self.helikopter1.draw(self._display_surf)
-            self.transporter.draw(self._display_surf)
-            
-            self.tankstelle.draw(self._display_surf)
-            self.mine.draw(self._display_surf)
-            self.lager.draw(self._display_surf)
-
-            self.burn_petrol()
-            self.textAnzeige()
         if self.gameOver:
             self.lose_screen()
+            return
+
+        self.transporter.update()
+        self.helikopter.draw(self._display_surf)
+        self.transporter.draw(self._display_surf)
+        self.helikopter.followPoint(self.transporter.rect.x, self.transporter.rect.y)
+        self.tankstelle.draw(self._display_surf)
+        self.mine.draw(self._display_surf)
+        self.lager.draw(self._display_surf)
+
+        self.burn_petrol()
+        self.textAnzeige()
+        
         pygame.display.update()
         pass
 
@@ -244,8 +247,8 @@ class Game:
     def heli_collision(self):
         if self.transporter.getLadung() > 0:
             self.transporter.setLadung(self.transporter.getLadung() - 5)
-            self.helikopter1.setLadestand(self.helikopter1.getLadestand() + 5)
-        if self.helikopter1.getLadestand() >= 20:
+            self.helikopter.setLadestand(self.helikopter.getLadestand() + 5)
+        if self.helikopter.getLadestand() >= 20:
             self.lose_screen()
 
     def tanken(self):
