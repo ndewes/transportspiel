@@ -1,23 +1,28 @@
 import random
 from math import radians
+
 import pygame
 from pygame.locals import *
 
+#Standard für RGB und weitere
 GRUEN = (0, 255, 0)
 ROT   = (255, 0, 0)
 BLAU  = (0, 0, 255)
 SCHWARZ = (0, 0, 0)
 WEISS = (255, 255, 255)
 
-FPS = 60
+#Fenster Angaben
 BREITE = 1600
 HOEHE = 900
+FPS = 60
 
-LKW_SPEED = 5
-HELI_SPEED = 5
-LKW_SPEED_NEGATIVE = -5
-HELI_SPEED_NEGATIVE = -5
+#Geschwindigkeiten für die bewegenden Objekte
+G_TRANSPORTER = 5
+G_HELI = 5
+G_TRANSPORTER_MINUS = -5
+G_HELI_MINUS = -5
 
+#Gebäudeparameter für Tankstelle, Lager und der Mine
 class Gebaeude(pygame.sprite.Sprite):
 
     def __init__(self, ladestand, kapazitaet, posX, posY, bildPfad):
@@ -31,8 +36,8 @@ class Gebaeude(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center=(self.posX, self.posY)
 
-    def draw(self, surface):
-        surface.blit(self.scalled, self.rect)
+    def draw(self, flaeche):
+        flaeche.blit(self.scalled, self.rect)
 
     def setLadestand(self, neuLadestand):
         self.ladestand_ = neuLadestand
@@ -46,6 +51,7 @@ class Gebaeude(pygame.sprite.Sprite):
     def getKapazitaet(self):
         return self.kapazitaet_
 
+#Transporterparameter
 class Transporter(pygame.sprite.Sprite):
 
     def __init__(self, ladung, tank):
@@ -57,8 +63,8 @@ class Transporter(pygame.sprite.Sprite):
         self.ladung_ = ladung
         self.tank_ = tank
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+    def draw(self, flaeche):
+        flaeche.blit(self.image, self.rect)
 
     def setTank(self, tank):
         self.tank_ = tank
@@ -77,18 +83,19 @@ class Transporter(pygame.sprite.Sprite):
         #print("Top: " + str(self.rect.top) + " Bottom: " + str(self.rect.bottom) + " Left: " + str(self.rect.left) + " Right: " + str(self.rect.right))
         if self.rect.top > 0:
             if pressed_keys[K_w]:
-                self.rect.move_ip(0, LKW_SPEED_NEGATIVE)
+                self.rect.move_ip(0, G_TRANSPORTER_MINUS)
         if self.rect.bottom < HOEHE:
             if pressed_keys[K_s]:
-                self.rect.move_ip(0, LKW_SPEED)
+                self.rect.move_ip(0, G_TRANSPORTER)
         if self.rect.left > 0:
             if pressed_keys[K_a]:
-                self.rect.move_ip(LKW_SPEED_NEGATIVE, 0)
+                self.rect.move_ip(G_TRANSPORTER_MINUS, 0)
         if self.rect.left < BREITE-self.rect.width:
             if pressed_keys[K_d]:
-                self.rect.move_ip(LKW_SPEED, 0)
+                self.rect.move_ip(G_TRANSPORTER, 0)
                 
 
+#Heliparameter
 class Helikopter(pygame.sprite.Sprite):
 
     def __init__(self): 
@@ -99,8 +106,8 @@ class Helikopter(pygame.sprite.Sprite):
         self.rect.center=(random.randint(10, BREITE-400), 0)
         self.ladestand = 0
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+    def draw(self, flaeche):
+        flaeche.blit(self.image, self.rect)
 
     def setLadestand(self, ladestand):
         self.ladestand = ladestand
@@ -120,21 +127,21 @@ class Helikopter(pygame.sprite.Sprite):
         xAway = x - self.rect.x
         yAway = y - self.rect.y
         if(xAway > 0 and yAway > 0):
-            self.rect.move_ip(random.randint(0, HELI_SPEED), random.randint(0, HELI_SPEED))
+            self.rect.move_ip(random.randint(0, G_HELI), random.randint(0, G_HELI))
         if(xAway < 0 and yAway < 0):
-            self.rect.move_ip(random.randint(HELI_SPEED_NEGATIVE, 0), random.randint(HELI_SPEED_NEGATIVE, 0))
+            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(G_HELI_MINUS, 0))
         if(xAway < 0 and yAway > 0):
-            self.rect.move_ip(random.randint(HELI_SPEED_NEGATIVE, 0), random.randint(0, HELI_SPEED))
+            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(0, G_HELI))
         if(xAway > 0 and yAway < 0):
-            self.rect.move_ip(random.randint(0, HELI_SPEED), random.randint(HELI_SPEED_NEGATIVE, 0))
+            self.rect.move_ip(random.randint(0, G_HELI), random.randint(G_HELI_MINUS, 0))
         if(xAway == 0 and yAway < 0):
-            self.rect.move_ip(0, random.randint(HELI_SPEED_NEGATIVE, 0))
+            self.rect.move_ip(0, random.randint(G_HELI_MINUS, 0))
         if(xAway == 0 and yAway > 0):
-            self.rect.move_ip(0, random.randint(0, HELI_SPEED))
+            self.rect.move_ip(0, random.randint(0, G_HELI))
         if(xAway < 0 and yAway == 0):
-            self.rect.move_ip(random.randint(HELI_SPEED_NEGATIVE, 0), 0)
+            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), 0)
         if(xAway > 0 and yAway == 0):
-            self.rect.move_ip(random.randint(0, HELI_SPEED), 0)
+            self.rect.move_ip(random.randint(0, G_HELI), 0)
 class Game:
 
     def __init__(self):
@@ -186,7 +193,7 @@ class Game:
             self.render()
         self.quit()
 
-    def build_text(self):
+    def textAnzeige(self):
         self.erzcounter = self.font.render('Transporter: [Erz: ' + str(self.transporter.getLadung()) + ' | Tank: ' + str(round(self.transporter.getTank())) + ']', False, (0, 0, 0));
         self._display_surf.blit(self.erzcounter, (10, 10))
         self.lagercounter = self.font.render('Lager: [Erz: ' + str(self.lager.getLadeStand()) + ']', False, (0, 0, 0))
@@ -220,7 +227,7 @@ class Game:
             self.lager.draw(self._display_surf)
 
             self.burn_petrol()
-            self.build_text()
+            self.textAnzeige()
         if self.gameOver:
             self.lose_screen()
         pygame.display.update()
