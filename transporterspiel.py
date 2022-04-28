@@ -1,5 +1,5 @@
 import random
-from math import radians
+from math import radians, sqrt
 
 import pygame
 from pygame.locals import *
@@ -21,6 +21,55 @@ G_TRANSPORTER = 5
 G_HELI = 6
 G_TRANSPORTER_MINUS = -5
 G_HELI_MINUS = -6
+
+#Verktorrechnung für den Helikopter
+class PVec:
+  def __init__(self, x, y):
+    self.x = x
+    self.y = y
+  
+  # Addition Subtraktion
+  def __add__(self, other): 
+    return PVec( self.x + other.x, self.y + other.y )  
+
+  def __sub__(self, other): 
+    return PVec( self.x - other.x, self.y - other.y )  
+  
+  # Skalarmultiplikation
+
+  def __mul__(self, other): 
+    if type(other) in [int, float]:
+      return PVec( self.x * other, self.y * other )
+    else:
+      raise NotImplementedError('Other multiplication than scalar not implemented')
+
+  def __truediv__(self, other):
+    if type(other) in [int, float]:
+      return PVec( self.x / other, self.y / other )
+    else:
+      raise NotImplementedError('Other multiplication than scalar not implemented')
+
+  # Betrag
+  def __abs__(self): 
+    return sqrt( self.x*self.x + self.y*self.y )
+
+  def normalized(self): 
+    return self / abs(self)
+
+  # Aufrunden, Abrunden, Kaufm. Runden
+  def __ceil__(self):
+    return PVec( self.x.__ceil__(), self.y.__ceil__() )
+
+  def __floor__(self):
+    return PVec( self.x.__floor__(), self.y.__floor__() )
+
+  def __round__(self):
+    return PVec( self.x.__round__(), self.y.__round__() )
+
+  # Darstellung im interaktiven Python
+  def __repr__(self):
+    return f"({self.x} {self.y})"
+
 
 #Gebäudeparameter für Tankstelle, Lager und der Mine
 class Gebaeude(pygame.sprite.Sprite):
@@ -214,7 +263,7 @@ class Game:
             self.aufladen()
         if self.transporter.rect.colliderect(self.lager.rect):
             self.abladen()
-        if  self.helikopter.rect.colliderect(self.mine.rect):
+        if  self.transporter.rect.colliderect(self.mine.rect):
             self.helikopter.move()
         
 
