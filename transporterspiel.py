@@ -17,11 +17,12 @@ BREITE = 1600
 HOEHE = 900
 FPS = 60
 
-#Geschwindigkeiten für die bewegenden Objekte
-G_TRANSPORTER = 5
-G_HELI = 6
-G_TRANSPORTER_MINUS = -5
-G_HELI_MINUS = -6
+#Transporter Richtungen
+G_TRANSPORTER = 4
+G_TRANSPORTER_MINUS = -4
+
+#Geschwindigkeit Heli
+G_HELI = 4.5
 
 #Verktorrechnung für den Helikopter
 class PVec:
@@ -37,7 +38,6 @@ class PVec:
     return PVec( self.x - other.x, self.y - other.y )  
   
   # Skalarmultiplikation
-
   def __mul__(self, other): 
     if type(other) in [int, float]:
       return PVec( self.x * other, self.y * other )
@@ -166,36 +166,21 @@ class Helikopter(pygame.sprite.Sprite):
         return self.ladestand
 
     def tVerfolgung(self, x, y):
-        be = 5
         posTransporter = PVec( x, y )
         posHeli = PVec( self.rect.x, self.rect.y )
 
-        richtung = round(( posTransporter - posHeli).normalized() * be)
+        richtung = round(( posTransporter - posHeli).normalized() * G_HELI)
 
         self.rect.move_ip(richtung.x, richtung.y)
 
-    def followPoint(self, x, y):
-        # Diese Funktion errechnet die entfernung zu einem Punkt im X/Y Format und bewegt
-        # sich mit einer zufälligen Geschwindigkeit (maximal der Konfigurierten) darauf zu
-        xAway = x - self.rect.x
-        yAway = y - self.rect.y
+    def getHome(self):
+        be = 5
+        posHome = PVec(900, 1400)
+        posHeli = PVec( self.rect.x, self.rect.y )
 
-        if(xAway > 0 and yAway > 0):
-            self.rect.move_ip(random.randint(0, G_HELI), random.randint(0, G_HELI))
-        if(xAway < 0 and yAway < 0):
-            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(G_HELI_MINUS, 0))
-        if(xAway < 0 and yAway > 0):
-            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(0, G_HELI))
-        if(xAway > 0 and yAway < 0):
-            self.rect.move_ip(random.randint(0, G_HELI), random.randint(G_HELI_MINUS, 0))
-        if(xAway == 0 and yAway < 0):
-            self.rect.move_ip(0, random.randint(G_HELI_MINUS, 0))
-        if(xAway == 0 and yAway > 0):
-            self.rect.move_ip(0, random.randint(0, G_HELI))
-        if(xAway < 0 and yAway == 0):
-            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), 0)
-        if(xAway > 0 and yAway == 0):
-            self.rect.move_ip(random.randint(0, G_HELI), 0)
+        richtung = round(( posHome - posHeli).normalized() * be)
+
+        self.rect.move_ip(richtung.x, richtung.y)
 
 class Game:
 
@@ -250,11 +235,11 @@ class Game:
         self.quit()
 
     def textAnzeige(self):
-        self.erzcounter = self.font.render('Transporter: [Erz: ' + str(self.transporter.getLadung()) + ' | Tank: ' + str(round(self.transporter.getTank())) + ']', False, (0, 0, 0));
+        self.erzcounter = self.font.render('Transporter: Erz: ' + str(self.transporter.getLadung()) + ' Erz: ' + str(round(self.transporter.getTank())), False, (255, 255, 255))
         self._display_surf.blit(self.erzcounter, (10, 10))
-        self.lagercounter = self.font.render('Lager: [Erz: ' + str(self.lager.getLadeStand()) + ']', False, (0, 0, 0))
+        self.lagercounter = self.font.render('Lager: Erz: ' + str(self.lager.getLadeStand()), False, (255, 255, 255))
         self._display_surf.blit(self.lagercounter, (10, 30))
-        self.helicounter = self.font.render('Helikopter: [Geklaut: ' + str(self.helikopter.getLadestand()) + ']', False, (0, 0, 0))
+        self.helicounter = self.font.render('Helikopter: Erz: ' + str(self.helikopter.getLadestand()), False, (255, 255, 255))
         self._display_surf.blit(self.helicounter, (10, 50))
  
     def event(self, event):
@@ -271,8 +256,10 @@ class Game:
             self.aufladen()
         if self.transporter.rect.colliderect(self.lager.rect):
             self.abladen()
-        #if  self.helikopter.rect.colliderect(self.garage.rect):
-        #    self.helikopter.tVerfolgung(self.transporter.rect.x, self.transporter.rect.y)
+        if  self.helikopter.rect.colliderect(self.garage.rect):
+            self.helikopter.tVerfolgung(self.transporter.rect.x, self.transporter.rect.y)
+        if self.transporter.rect.colliderect(self.mine.rect):
+            self.helikopter.getHome()
         
 
         if self.gameOver:
@@ -306,7 +293,7 @@ class Game:
         if self.transporter.getLadung() > 0:
             self.transporter.setLadung(self.transporter.getLadung() - 5)
             self.helikopter.setLadestand(self.helikopter.getLadestand() + 5)
-            #self.helikopter.rect.move_ip(200, 700)
+            self.helikopter.getHome()
         if self.helikopter.getLadestand() >= 20:
             self.lose_screen()
 
