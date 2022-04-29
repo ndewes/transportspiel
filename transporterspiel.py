@@ -172,24 +172,18 @@ class Helikopter(pygame.sprite.Sprite):
 
 
     def followPoint(self, x, y):
-        xAway = x - self.rect.x
-        yAway = y - self.rect.y
-        if(xAway > 0 and yAway > 0):
-            self.rect.move_ip(random.randint(0, G_HELI), random.randint(0, G_HELI))
-        if(xAway < 0 and yAway < 0):
-            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(G_HELI_MINUS, 0))
-        if(xAway < 0 and yAway > 0):
-            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(0, G_HELI))
-        if(xAway > 0 and yAway < 0):
-            self.rect.move_ip(random.randint(0, G_HELI), random.randint(G_HELI_MINUS, 0))
-        if(xAway == 0 and yAway < 0):
-            self.rect.move_ip(0, random.randint(G_HELI_MINUS, 0))
-        if(xAway == 0 and yAway > 0):
-            self.rect.move_ip(0, random.randint(0, G_HELI))
-        if(xAway < 0 and yAway == 0):
-            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), 0)
-        if(xAway > 0 and yAway == 0):
-            self.rect.move_ip(random.randint(0, G_HELI), 0)
+        positionA = PVec( 45, 100 )
+        positionB = PVec( 150, 80 )
+
+        richtungAB = ( positionB - positionA ).normalized()
+
+        # Position verändern
+        positionA = round(positionA + richtungAB)
+        print( positionA ) 
+        self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(0, G_HELI))
+
+    def goHome(self, x, y):
+        pass
 class Game:
 
     def __init__(self):
@@ -198,7 +192,7 @@ class Game:
         self.size = self.breite, self.hoehe = BREITE, HOEHE
         self.gameOver = False
  
-    def initials(self):
+    def initial(self):
         pygame.init()
         pygame.display.set_caption('Transporterspiel')
         pygame.font.init()
@@ -227,11 +221,12 @@ class Game:
         self.transporter = Transporter(0, 100)
 
         self.lager = Gebaeude(0, 100, 1400, 900, 'grafik/lager.png')
+        self.garage = Gebaeude(100, 100, 200, 200, 'grafik/garage.png')
         self.mine = Gebaeude(100, 100, 410, 110, 'grafik/mine.png')
         self.tankstelle = Gebaeude(100, 100, 1375, 250, 'grafik/tankstelle.png')
 
     def start(self):
-        if self.initials() == False:
+        if self.initial() == False:
             self._running = False
  
         while( self._running ):
