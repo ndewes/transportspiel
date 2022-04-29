@@ -1,5 +1,6 @@
 import random
 from math import radians, sqrt
+from turtle import pos
 
 import pygame
 from pygame.locals import *
@@ -129,7 +130,7 @@ class Transporter(pygame.sprite.Sprite):
 
     def update(self):
         pressed_keys = pygame.key.get_pressed()
-        #print("Top: " + str(self.rect.top) + " Bottom: " + str(self.rect.bottom) + " Left: " + str(self.rect.left) + " Right: " + str(self.rect.right))
+
         if self.rect.top > 0:
             if pressed_keys[K_w]:
                 self.rect.move_ip(0, G_TRANSPORTER_MINUS)
@@ -152,7 +153,7 @@ class Helikopter(pygame.sprite.Sprite):
         self.heli = pygame.image.load('grafik/heli.png')
         self.image = pygame.transform.scale(self.heli, (75, 75))
         self.rect = self.image.get_rect()
-        self.rect.center=(random.randint(10, BREITE-400), 0)
+        self.rect.center=(100, 700)
         self.ladestand = 0
 
     def draw(self, flaeche):
@@ -164,26 +165,38 @@ class Helikopter(pygame.sprite.Sprite):
     def getLadestand(self):
         return self.ladestand
 
-    def move(self):
-        self.rect.move_ip(random.randint(-5, 10), random.randint(-5, 10))
-        if(self.rect.bottom > HOEHE):
-            self.rect.top = 0
-            self.rect.center = (random.randint(30, 370), 0)
+    def tVerfolgung(self, x, y):
+        be = 5
+        posTransporter = PVec( x, y )
+        posHeli = PVec( self.rect.x, self.rect.y )
 
+        richtung = round(( posTransporter - posHeli).normalized() * be)
+
+        self.rect.move_ip(richtung.x, richtung.y)
 
     def followPoint(self, x, y):
-        positionA = PVec( 45, 100 )
-        positionB = PVec( 150, 80 )
+        # Diese Funktion errechnet die entfernung zu einem Punkt im X/Y Format und bewegt
+        # sich mit einer zufälligen Geschwindigkeit (maximal der Konfigurierten) darauf zu
+        xAway = x - self.rect.x
+        yAway = y - self.rect.y
 
-        richtungAB = ( positionB - positionA ).normalized()
+        if(xAway > 0 and yAway > 0):
+            self.rect.move_ip(random.randint(0, G_HELI), random.randint(0, G_HELI))
+        if(xAway < 0 and yAway < 0):
+            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(G_HELI_MINUS, 0))
+        if(xAway < 0 and yAway > 0):
+            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(0, G_HELI))
+        if(xAway > 0 and yAway < 0):
+            self.rect.move_ip(random.randint(0, G_HELI), random.randint(G_HELI_MINUS, 0))
+        if(xAway == 0 and yAway < 0):
+            self.rect.move_ip(0, random.randint(G_HELI_MINUS, 0))
+        if(xAway == 0 and yAway > 0):
+            self.rect.move_ip(0, random.randint(0, G_HELI))
+        if(xAway < 0 and yAway == 0):
+            self.rect.move_ip(random.randint(G_HELI_MINUS, 0), 0)
+        if(xAway > 0 and yAway == 0):
+            self.rect.move_ip(random.randint(0, G_HELI), 0)
 
-        # Position verändern
-        positionA = round(positionA + richtungAB)
-        print( positionA ) 
-        self.rect.move_ip(random.randint(G_HELI_MINUS, 0), random.randint(0, G_HELI))
-
-    def goHome(self, x, y):
-        pass
 class Game:
 
     def __init__(self):
@@ -194,7 +207,7 @@ class Game:
  
     def initial(self):
         pygame.init()
-        pygame.display.set_caption('Transporterspiel')
+        pygame.display.set_caption('Transporterspiel von Niklas Dewes')
         pygame.font.init()
         pygame.mixer.init()
 
@@ -220,10 +233,10 @@ class Game:
         self.helikopter = Helikopter()
         self.transporter = Transporter(0, 100)
 
-        self.lager = Gebaeude(0, 100, 1400, 900, 'grafik/lager.png')
-        self.garage = Gebaeude(100, 100, 200, 200, 'grafik/garage.png')
-        self.mine = Gebaeude(100, 100, 410, 110, 'grafik/mine.png')
-        self.tankstelle = Gebaeude(100, 100, 1375, 250, 'grafik/tankstelle.png')
+        self.lager = Gebaeude(0, 100, 1500, 900, 'grafik/lager.png')
+        self.garage = Gebaeude(0, 0, 900, 1400, 'grafik/garage.png')
+        self.mine = Gebaeude(100, 100, 410, 150, 'grafik/mine.png')
+        self.tankstelle = Gebaeude(100, 100, 1600, 300, 'grafik/tankstelle.png')
 
     def start(self):
         if self.initial() == False:
@@ -258,8 +271,8 @@ class Game:
             self.aufladen()
         if self.transporter.rect.colliderect(self.lager.rect):
             self.abladen()
-        if  self.transporter.rect.colliderect(self.mine.rect):
-            self.helikopter.move()
+        #if  self.helikopter.rect.colliderect(self.garage.rect):
+        #    self.helikopter.tVerfolgung(self.transporter.rect.x, self.transporter.rect.y)
         
 
         if self.gameOver:
@@ -269,10 +282,11 @@ class Game:
         self.transporter.update()
         self.helikopter.draw(self._display_surf)
         self.transporter.draw(self._display_surf)
-        self.helikopter.followPoint(self.transporter.rect.x, self.transporter.rect.y)
-        self.tankstelle.draw(self._display_surf)
-        self.mine.draw(self._display_surf)
+        self.helikopter.tVerfolgung(self.transporter.rect.x, self.transporter.rect.y)
         self.lager.draw(self._display_surf)
+        self.garage.draw(self._display_surf)
+        self.mine.draw(self._display_surf)
+        self.tankstelle.draw(self._display_surf)
 
         self.burn_petrol()
         self.textAnzeige()
@@ -292,6 +306,7 @@ class Game:
         if self.transporter.getLadung() > 0:
             self.transporter.setLadung(self.transporter.getLadung() - 5)
             self.helikopter.setLadestand(self.helikopter.getLadestand() + 5)
+            #self.helikopter.rect.move_ip(200, 700)
         if self.helikopter.getLadestand() >= 20:
             self.lose_screen()
 
