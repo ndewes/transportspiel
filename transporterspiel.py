@@ -173,7 +173,7 @@ class Helikopter(pygame.sprite.Sprite):
 
         self.rect.move_ip(richtung.x, richtung.y)
 
-    def getHome(self):
+    def goHome(self):
         be = 5
         posHome = PVec(900, 1400)
         posHeli = PVec( self.rect.x, self.rect.y )
@@ -259,7 +259,7 @@ class Game:
         if  self.helikopter.rect.colliderect(self.garage.rect):
             self.helikopter.tVerfolgung(self.transporter.rect.x, self.transporter.rect.y)
         if self.transporter.rect.colliderect(self.mine.rect):
-            self.helikopter.getHome()
+            self.helikopter.goHome()
         
 
         if self.gameOver:
@@ -291,9 +291,9 @@ class Game:
  
     def heli_collision(self):
         if self.transporter.getLadung() > 0:
+            self.helikopter.goHome()
             self.transporter.setLadung(self.transporter.getLadung() - 5)
             self.helikopter.setLadestand(self.helikopter.getLadestand() + 5)
-            self.helikopter.getHome()
         if self.helikopter.getLadestand() >= 20:
             self.lose_screen()
 
